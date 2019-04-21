@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 import os
+import file_data
 
 def main():
 
@@ -9,11 +10,12 @@ def main():
 	images = readImages()
 
 	#Read in data from Section001_Data.txt
-	loads, displacements, surface_area, length = readSpecimenData()
+	specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
 	
 	#Keep track of Stress and Strains
 	stresses = []
 	strains = []
+
 	#Get distances using sift
 	distances = getSiftDistance(images[0], images[1])
 
@@ -31,15 +33,14 @@ def main():
 	"""
 	for idx in range(0, len(images)-1):
 		distances = getSiftDistance(images[idx], images[idx+1])
-		strains.append(getStrain(loads[idx], surface_area))
-		#stresses.append(getStress(length, ______))
+		strains.append(getStrain(specimen.ol, load_disp_data[idx].disp))
+		stresses.append(load_disp_data[idx].stress)
 		youngs_mod = getYoungsModulus(strains[idx] / stress[idx])
 	"""
 
 
 def readImages():
-	my_dir = os.path.dirname(os.path.realpath(__file__))
-	image_dir = os.path.join(my_dir, "Images")
+	image_dir = '../images/'
 	filenames = os.listdir(image_dir)
 
 	images = []
@@ -47,15 +48,8 @@ def readImages():
 		images.append(cv2.imread(os.path.join(image_dir,file)))
 	return images
 
-def readSpecimenData():
-	# TODO
-	return None, None, None, None
-
-def getStrain(load, surface_area):
-	return load / surface_area
-
-def getStress(length, change_in_length):
-	return change_in_length / length
+def getStrain(length, displacement):
+	return displacement / length
 
 def getYoungsModulus(strain, stress):
 	return strain / stress
