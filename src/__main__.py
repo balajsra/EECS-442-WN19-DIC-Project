@@ -44,8 +44,11 @@ def read_images():
 	filenames = os.listdir(image_dir)
 
 	images = []
+
+	images.append(None)
+
 	for file in filenames:
-		images.append(cv2.imread(os.path.join(image_dir, file)))
+		images.append(cv2.imread(os.path.join(image_dir, file), 0))
 
 	return images
 
@@ -100,5 +103,51 @@ def get_sift_distance(img1, img2):
 	return distances
 
 
+def find_displacement(match_method):
+	images = read_images()
+
+	specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
+
+	plt.figure(1)
+
+	reference = images[8]
+	compare_img = images[12]
+
+	plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
+
+	subset_size = 5
+	subset_spacing = 20
+
+	for x in range(650, 2080, subset_spacing):
+		for y in range(120, 500, subset_spacing):
+			up_bound = (subset_size + 1) // 2
+			low_bound = subset_size // 2
+
+			subset = reference[y-low_bound:y+up_bound, x-low_bound:x+up_bound]
+
+			res = cv2.matchTemplate(image=compare_img, templ=subset, method=match_method)
+
+			minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(res)
+
+			dx = None
+			dy = None
+
+			if match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+				dx = minLoc[0] - x
+				dy = minLoc[1] - y
+			elif match_method in [cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+			                      cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
+				dx = maxLoc[0] - x
+				dy = maxLoc[1] - y
+
+			plt.arrow(x=x, y=y, dx=dx, dy=dy, color="yellow", length_includes_head=True, shape="full")
+
+	plt.show()
+
+
 if __name__ == '__main__':
-	main()
+	# main()
+	for match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
+	                     cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+	                     cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
+		find_displacement(match_method)
