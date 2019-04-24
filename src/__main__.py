@@ -3,6 +3,7 @@ import cv2
 from matplotlib import pyplot as plt
 import os
 import file_data
+from image_data import ImageData
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
 
 	# Read in data from Section001_Data.txt
 	specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
-	
+
 	# Keep track of Stress and Strains
 	stresses = []
 	strains = []
@@ -111,21 +112,31 @@ def find_displacement(match_method):
 	plt.figure(1)
 
 	reference = images[8]
-	compare_img = images[12]
+	compare_img = images[9]
 
 	plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
 
 	subset_size = 5
-	subset_spacing = 20
+	subset_spacing = 30
+	search_size = 3
 
-	for x in range(650, 2080, subset_spacing):
-		for y in range(120, 500, subset_spacing):
+	x_range = range(650, 2080, subset_spacing)
+	y_range = range(120, 500, subset_spacing)
+
+	im_data = ImageData(len(y_range), len(x_range))
+
+	for i in range(len(x_range)):
+		for j in range(len(y_range)):
+			x = x_range[i]
+			y = y_range[j]
+
 			up_bound = (subset_size + 1) // 2
 			low_bound = subset_size // 2
 
 			subset = reference[y-low_bound:y+up_bound, x-low_bound:x+up_bound]
+			search = compare_img[y-search_size:y+search_size+1, x-search_size:x+search_size+1]
 
-			res = cv2.matchTemplate(image=compare_img, templ=subset, method=match_method)
+			res = cv2.matchTemplate(image=search, templ=subset, method=match_method)
 
 			minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(res)
 
@@ -133,21 +144,27 @@ def find_displacement(match_method):
 			dy = None
 
 			if match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-				dx = minLoc[0] - x
-				dy = minLoc[1] - y
+				dx = minLoc[0] - search_size
+				dy = minLoc[1] - search_size
 			elif match_method in [cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
 			                      cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
-				dx = maxLoc[0] - x
-				dy = maxLoc[1] - y
+				dx = maxLoc[0] - search_size
+				dy = maxLoc[1] - search_size
 
-			plt.arrow(x=x, y=y, dx=dx, dy=dy, color="yellow", length_includes_head=True, shape="full")
+			im_data.dx[j, i] = dx
+			im_data.dy[j, i] = dy
+			im_data.disp_mag[j, i] = np.sqrt((dx ** 2) + (dy ** 2))
 
+	plt.quiver(x_range, y_range, im_data.dx, im_data.dy, im_data.disp_mag, cmap=plt.cm.jet)
 	plt.show()
 
 
 if __name__ == '__main__':
 	# main()
-	for match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
-	                     cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
-	                     cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
-		find_displacement(match_method)
+
+	find_displacement(cv2.TM_SQDIFF_NORMED)
+
+	# for match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
+	#                      cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+	#                      cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
+	# 	find_displacement(match_method)
