@@ -177,7 +177,7 @@ def find_displacement(match_method):
 	print("Y DISPLACEMENT AVERAGE: ", y_average)
 	print("X MAX: ", np.amax(x_displacements))
 	print("Y MAX: ", np.amax(y_displacements))
-
+	#useless comment here
 	plt.show()
 
 def findAverageDisplacement(displacement_field, x1, x2, y1, y2):
