@@ -112,7 +112,7 @@ def find_displacement(match_method):
 	plt.figure(1)
 
 	reference = images[8]
-	compare_img = images[9]
+	compare_img = images[12]
 
 	plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
 
@@ -130,6 +130,15 @@ def find_displacement(match_method):
 			x = x_range[i]
 			y = y_range[j]
 
+	x_displacements = np.zeros((round(380/subset_spacing), round(1430/subset_spacing)))
+	y_displacements = np.zeros((round(380/subset_spacing), round(1430/subset_spacing)))
+	x_disp_idx = 0
+	y_disp_idx = 0
+
+	for x in range(650, 2080, subset_spacing):
+		y_disp_idx = 0
+		print(x_disp_idx)
+		for y in range(120, 500, subset_spacing):
 			up_bound = (subset_size + 1) // 2
 			low_bound = subset_size // 2
 
@@ -154,9 +163,32 @@ def find_displacement(match_method):
 			im_data.dx[j, i] = dx
 			im_data.dy[j, i] = dy
 			im_data.disp_mag[j, i] = np.sqrt((dx ** 2) + (dy ** 2))
+			plt.arrow(x=x, y=y, dx=dx, dy=dy, color="yellow", length_includes_head=True, shape="full")
+			x_displacements[y_disp_idx, x_disp_idx] = dx
+			y_displacements[y_disp_idx, x_disp_idx] = dy
+			y_disp_idx += 1
+		x_disp_idx += 1
 
 	plt.quiver(x_range, y_range, im_data.dx, im_data.dy, im_data.disp_mag, cmap=plt.cm.jet)
+
+	x_average = findAverageDisplacement(x_displacements, 30, 42, 0, 19)
+	y_average = findAverageDisplacement(y_displacements, 30, 42, 0, 19)
+	print("X DISPLACEMENT AVERAGE: ", x_average)
+	print("Y DISPLACEMENT AVERAGE: ", y_average)
+	print("X MAX: ", np.amax(x_displacements))
+	print("Y MAX: ", np.amax(y_displacements))
+
 	plt.show()
+
+def findAverageDisplacement(displacement_field, x1, x2, y1, y2):
+	""" x1,x2,y1,y2 defines the window 
+		that we want to find the average
+		for. Currently using magnitudes,
+		don't care about signs.
+	"""
+	absolute = np.absolute(displacement_field[y1:y2, x1:x2])
+	return np.average(absolute)
+
 
 
 if __name__ == '__main__':
