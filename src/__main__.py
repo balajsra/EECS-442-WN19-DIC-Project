@@ -111,8 +111,8 @@ def find_displacement(match_method):
 
 	plt.figure(1)
 
-	reference = images[8]
-	compare_img = images[12]
+	reference = images[560]
+	compare_img = images[561]
 
 	plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
 
@@ -147,18 +147,18 @@ def find_displacement(match_method):
 
 			res = cv2.matchTemplate(image=search, templ=subset, method=match_method)
 
-			minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(res)
+			minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(src=res)
 
 			dx = None
 			dy = None
 
 			if match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-				dx = minLoc[0] - search_size
-				dy = minLoc[1] - search_size
+				dx = (minLoc[0] + (subset_size // 2)) - search_size
+				dy = (minLoc[1] + (subset_size // 2)) - search_size
 			elif match_method in [cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
 			                      cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
-				dx = maxLoc[0] - search_size
-				dy = maxLoc[1] - search_size
+				dx = (maxLoc[0] + (subset_size // 2)) - search_size
+				dy = (maxLoc[1] + (subset_size // 2)) - search_size
 
 			im_data.dx[j, i] = dx
 			im_data.dy[j, i] = dy
