@@ -27,19 +27,19 @@ def find_displacement(match_method):
 
     plt.figure(1)
 
-    reference = images[8]
-    compare_img = images[96]
+    reference = images[7]
+    compare_img = images[8]
 
     plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
 
     subset_size = 5
-    subset_spacing = 20
+    subset_spacing = 30
     search_size = 5
 
     x_range = range(650, 2080, subset_spacing)
     y_range = range(120, 500, subset_spacing)
 
-    im_data = ImageData(len(y_range), len(x_range))
+    im_data = image_data.ImageData(len(y_range), len(x_range))
 
     disp_mag = np.zeros((len(y_range), len(x_range)))
 
@@ -74,9 +74,27 @@ def find_displacement(match_method):
             im_data.displacement[i, j, :] = np.array([dx, dy])
             disp_mag[i, j] = np.sqrt((dx ** 2) + (dy ** 2))
 
-    plt.quiver(X=x_range, Y=y_range,
-               U=im_data.displacement[:, :, 0], V=im_data.displacement[:, :, 1],
-               C=im_data.disp_mag, cmap=plt.cm.jet)
+    # Strain in x-direction
+    im_data.strain[:, :, 0] = np.gradient(
+        im_data.displacement[:, :, 0],      # x displacements
+        im_data.location[:, 0, 1],          # y (row) positions
+        im_data.location[0, :, 0])[1]       # x (col) positions
+
+    im_data.strain[:, :, 1] = np.gradient(
+        im_data.displacement[:, :, 1],      # y displacements
+        im_data.location[:, 0, 1],          # y (row) positions
+        im_data.location[0, :, 0])[0]       # x (col) positions
+
+    # plt.quiver(X=im_data.location[0, :, 0], Y=im_data.location[:, 0, 1],
+    #            U=im_data.strain[:, :, 0], V=im_data.strain[:, :, 1],
+    #            C=strain_mag, cmap=plt.cm.jet)
+
+    plt.quiver(im_data.location[:, :, 0],       # x coordinates of arrow locations
+               im_data.location[:, :, 1],       # y coordinates of arrow locations
+               im_data.displacement[:, :, 0],   # x components of arrow vectors
+               im_data.displacement[:, :, 1],   # y components of arrow vectors
+               disp_mag,                        # arrow color (vector magnitude)
+               cmap=plt.cm.jet)                 # color map (jet)
 
     plt.show()
 
