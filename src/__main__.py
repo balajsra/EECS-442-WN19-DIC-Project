@@ -25,15 +25,11 @@ def find_displacement(match_method):
 
     specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
 
-    plt.figure(1)
-
-    reference = images[7]
-    compare_img = images[8]
-
-    plt.imshow(reference, cmap="gray", vmin=0, vmax=255)
+    reference = images[8]
+    compare_img = images[9]
 
     subset_size = 5
-    subset_spacing = 30
+    subset_spacing = 10
     search_size = 5
 
     x_range = range(650, 2080, subset_spacing)
@@ -43,8 +39,8 @@ def find_displacement(match_method):
 
     disp_mag = np.zeros((len(y_range), len(x_range)))
 
-    for i in range(0, len(y_range)):
-        for j in range(0, len(x_range)):
+    for i in range(len(y_range)):
+        for j in range(len(x_range)):
             x = x_range[j]
             y = y_range[i]
 
@@ -74,27 +70,58 @@ def find_displacement(match_method):
             im_data.displacement[i, j, :] = np.array([dx, dy])
             disp_mag[i, j] = np.sqrt((dx ** 2) + (dy ** 2))
 
-    # Strain in x-direction
+    # Strain in x direction
     im_data.strain[:, :, 0] = np.gradient(
         im_data.displacement[:, :, 0],      # x displacements
         im_data.location[:, 0, 1],          # y (row) positions
         im_data.location[0, :, 0])[1]       # x (col) positions
 
+    # Strain in y direction
     im_data.strain[:, :, 1] = np.gradient(
         im_data.displacement[:, :, 1],      # y displacements
         im_data.location[:, 0, 1],          # y (row) positions
         im_data.location[0, :, 0])[0]       # x (col) positions
 
-    # plt.quiver(X=im_data.location[0, :, 0], Y=im_data.location[:, 0, 1],
-    #            U=im_data.strain[:, :, 0], V=im_data.strain[:, :, 1],
-    #            C=strain_mag, cmap=plt.cm.jet)
+    ##########################
+    # Figure 1: Displacement #
+    ##########################
+    plt.figure(1)
+    plt.subplot(2, 1, 1)
 
-    plt.quiver(im_data.location[:, :, 0],       # x coordinates of arrow locations
-               im_data.location[:, :, 1],       # y coordinates of arrow locations
-               im_data.displacement[:, :, 0],   # x components of arrow vectors
-               im_data.displacement[:, :, 1],   # y components of arrow vectors
-               disp_mag,                        # arrow color (vector magnitude)
-               cmap=plt.cm.jet)                 # color map (jet)
+    plt.imshow(reference,  # Show reference image
+               cmap="gray",  # Grayscale
+               vmin=0,  # Minimum pixel value
+               vmax=255,  # Maximum pixel value
+               origin="lower")  # Flip image so increasing row corresponds to increasing y
+
+    plt.quiver(im_data.location[:, :, 0],  # x coordinates of arrow locations
+               im_data.location[:, :, 1],  # y coordinates of arrow locations
+               im_data.displacement[:, :, 0],  # x components of arrow vectors
+               im_data.displacement[:, :, 1],  # y components of arrow vectors
+               disp_mag,  # arrow color (vector magnitude)
+               cmap=plt.cm.jet,  # color map (jet)
+               units="dots")  # units of arrow dimensions
+
+    ####################
+    # Figure 1: Strain #
+    ####################
+    plt.subplot(2, 1, 2)
+
+    plt.imshow(reference,  # Show reference image
+               cmap="gray",  # Grayscale
+               vmin=0,  # Minimum pixel value
+               vmax=255,  # Maximum pixel value
+               origin="lower")  # Flip image so increasing row corresponds to increasing y
+
+    strain_mag = np.sqrt(im_data.strain[:, :, 0] ** 2 + im_data.strain[:, :, 1] ** 2)
+
+    plt.quiver(im_data.location[0, :, 0],
+               im_data.location[:, 0, 1],
+               im_data.strain[:, :, 0],
+               im_data.strain[:, :, 1],
+               strain_mag,
+               cmap=plt.cm.jet,
+               units="dots")
 
     plt.show()
 
