@@ -29,7 +29,7 @@ def find_displacement(images, ref_index, comp_index, match_method):
     grid_spacing = 10
 
     x_range = range(200, 2200, grid_spacing)
-    y_range = range(100, 500, grid_spacing)
+    y_range = range(150, 450, grid_spacing)
 
     im_data = image_data.ImageData(len(y_range), len(x_range), ref_index, comp_index)
 
@@ -172,6 +172,8 @@ def compare_matching_methods(images, ref_idx, comp_idx):
         plt.quiver(img_data.location[:, :, 0], img_data.location[:, :, 1], img_data.displacement[:, :, 0],
                    img_data.displacement[:, :, 1], disp_mag, cmap=plt.cm.jet, units="dots", angles="xy")
 
+        plt.colorbar(ax=ax)
+
         i += 1
 
     plt.show()
@@ -182,6 +184,7 @@ if __name__ == '__main__':
 
     specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
 
+    compare_matching_methods(images, 8, 9)
     compare_matching_methods(images, 560, 561)
 
     # Matching Methods
@@ -191,5 +194,5 @@ if __name__ == '__main__':
     #   cv2.TM_CCORR_NORMED
     #   cv2.TM_CCOEFF
     #   cv2.TM_CCOEFF_NORMED
-    reference_img, img_data = find_displacement(images, 560, 561, cv2.TM_CCORR_NORMED)
-    plot_disp_and_strain(reference_img, img_data)
+    # reference_img, img_data = find_displacement(images, 560, 561, cv2.TM_CCORR_NORMED)
+    # plot_disp_and_strain(reference_img, img_data)
