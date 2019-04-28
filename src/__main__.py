@@ -5,6 +5,8 @@ import os
 import file_data
 import image_data
 
+PIXELS_TO_MM = None
+
 
 def read_images():
     image_dir = '../Images/'
@@ -24,8 +26,8 @@ def find_displacement(images, ref_index, comp_index, match_method):
     reference = images[ref_index]
     compare_img = images[comp_index]
 
-    ref_template_size = (5, 5)
-    search_window_size = (5, 3)
+    ref_template_size = (15, 15)
+    search_window_size = (11, 7)
     grid_spacing = 10
 
     x_range = range(200, 2200, grid_spacing)
@@ -100,7 +102,8 @@ def plot_disp_and_strain(ref_img, img_data):
                vmax=255,        # Maximum pixel value
                origin="lower")  # Flip image so increasing row corresponds to increasing y
 
-    disp_mag = np.sqrt(img_data.displacement[:, :, 0] ** 2 + img_data.displacement[:, :, 1] ** 2)
+    # Displacement magnitude in mm
+    disp_mag = np.sqrt(img_data.displacement[:, :, 0] ** 2 + img_data.displacement[:, :, 1] ** 2) * PIXELS_TO_MM
 
     plt.quiver(img_data.location[:, :, 0],      # x coordinates of arrow locations
                img_data.location[:, :, 1],      # y coordinates of arrow locations
@@ -110,6 +113,8 @@ def plot_disp_and_strain(ref_img, img_data):
                cmap=plt.cm.jet,                 # color map (jet)
                units="dots",                    # units of arrow dimensions
                angles="xy")                     # arrows point from (x, y) to (x + u, y + v)
+
+    plt.colorbar(ax=ax)
 
     # Subplot 2: Strain
     ax = plt.subplot(2, 1, 2)
@@ -133,10 +138,13 @@ def plot_disp_and_strain(ref_img, img_data):
                units="dots",
                angles="xy")
 
+    plt.colorbar(ax=ax)
+
     plt.show()
 
 
-def compare_matching_methods(images, ref_idx, comp_idx):
+def compare_matching_quality(images, ref_idx, comp_idx):
+    # Compare Quality of Displacement Tracking Methods
     plt.figure()
     plt.suptitle("Displacements between image " + str(ref_idx) + " and image " + str(comp_idx))
 
@@ -179,13 +187,80 @@ def compare_matching_methods(images, ref_idx, comp_idx):
     plt.show()
 
 
+def compare_matching_time():
+    # Compare Runtime of Displacement Tracking Methods
+    plt.figure()
+    plt.title("Matching Method Runtime Comparison")
+
+    methods = ["SQDIFF", "SQDIFF_NORMED", "CCORR", "CCORR_NORMED", "CCOEFF", "CCOEFF_NORMED"]
+
+    SQDIFF = [6.969048976898193, 6.824753761291504, 6.946980714797974]
+    SQDIFF_NORMED = [7.051121950149536, 7.040151357650757, 6.851653814315796]
+    CCORR = [7.0052430629730225, 6.867607116699219, 6.804780006408691]
+    CCORR_NORMED = [7.036186933517456, 6.773889064788818, 6.812784910202026]
+    CCOEFF = [6.799818754196167, 7.141877889633179, 6.904510736465454]
+    CCOEFF_NORMED = [6.861653566360474, 6.8746209144592285, 7.113796710968018]
+
+    x_pos = np.arange(len(methods))
+    means = [np.mean(SQDIFF), np.mean(SQDIFF_NORMED),
+             np.mean(CCORR), np.mean(CCORR_NORMED),
+             np.mean(CCOEFF), np.mean(CCOEFF_NORMED)]
+    error = [np.std(SQDIFF), np.std(SQDIFF_NORMED),
+             np.std(CCORR), np.std(CCORR_NORMED),
+             np.std(CCOEFF), np.std(CCOEFF_NORMED)]
+
+    plt.bar(x_pos, means, yerr=error, align="center", alpha=0.5, ecolor="black", capsize=10)
+    plt.xticks(x_pos, methods)
+
+    plt.show()
+
+
+def plot_frame_data(frame_data):
+    plt.figure()
+
+    x = []
+    y_1 = []
+    y_2 = []
+    y_3 = []
+
+    for i in range(1, len(frame_data)):
+        x.append(i)
+        y_1.append(frame_data[i].disp)
+        y_2.append(frame_data[i].load / 1000)   # Convert from N to kN
+        y_3.append(frame_data[i].stress)
+
+    ax = plt.subplot(3, 1, 1)
+    ax.plot(x, y_1)
+    ax.set_xlabel("Frame Number")
+    ax.set_ylabel("Axial Displacement (mm)")
+
+    ax = plt.subplot(3, 1, 2)
+    ax.plot(x, y_2)
+    ax.set_xlabel("Frame Number")
+    ax.set_ylabel("Axial Load (kN)")
+
+    ax = plt.subplot(3, 1, 3)
+    ax.plot(x, y_3)
+    ax.set_xlabel("Frame Number")
+    ax.set_ylabel("Axial Stress (MPa)")
+
+    plt.show()
+
+
 if __name__ == '__main__':
     images = read_images()
 
-    specimen, load_disp_data = file_data.read_file("../Section001_Data.txt")
+    specimen, frame_data = file_data.read_file("../Section001_Data.txt")
 
-    compare_matching_methods(images, 8, 9)
-    compare_matching_methods(images, 560, 561)
+    # Width = 16.61 mm = 404 pixels
+    PIXELS_TO_MM = specimen.w / 404
+
+    plot_frame_data(frame_data)
+
+    compare_matching_time()
+
+    compare_matching_quality(images, 8, 9)
+    compare_matching_quality(images, 560, 561)
 
     # Matching Methods
     #   cv2.TM_SQDIFF
@@ -194,5 +269,7 @@ if __name__ == '__main__':
     #   cv2.TM_CCORR_NORMED
     #   cv2.TM_CCOEFF
     #   cv2.TM_CCOEFF_NORMED
-    # reference_img, img_data = find_displacement(images, 560, 561, cv2.TM_CCORR_NORMED)
-    # plot_disp_and_strain(reference_img, img_data)
+
+    for i in range(650, 660):
+        reference_img, img_data = find_displacement(images, i, i+1, cv2.TM_CCORR_NORMED)
+        plot_disp_and_strain(reference_img, img_data)
