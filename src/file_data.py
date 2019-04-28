@@ -32,7 +32,8 @@ def read_file(filepath):
     file = open(filepath, "r")
 
     specimen = SpecimenDimensions()
-    load_disp_data = dict()
+    frame_data = []
+    frame_data.append(None)
 
     data_start = -1
     in_frame_data = False
@@ -67,14 +68,12 @@ def read_file(filepath):
             if line != '\t\t\n':
                 frame_num_str, load_str, disp_str = line.split("\t")
 
-                frame_num = int(frame_num_str)
-
                 load = float(load_str)
                 disp = float(disp_str)
                 stress = load / (specimen.w * specimen.t)
 
-                load_disp_data[frame_num] = FrameData(load, disp, stress)
+                frame_data.append(FrameData(load, disp, stress))
 
     file.close()
 
-    return specimen, load_disp_data
+    return specimen, frame_data
