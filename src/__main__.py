@@ -22,18 +22,16 @@ def read_images():
     return images
 
 
-def find_displacement(images, ref_index, comp_index, match_method):
+def find_displacement(images, ref_index, comp_index, match_method,
+                      ref_template_size, search_window_size, grid_spacing):
     reference = images[ref_index]
     compare_img = images[comp_index]
-
-    ref_template_size = (15, 15)
-    search_window_size = (11, 7)
-    grid_spacing = 10
 
     x_range = range(200, 2200, grid_spacing)
     y_range = range(150, 450, grid_spacing)
 
-    im_data = image_data.ImageData(len(y_range), len(x_range), ref_index, comp_index)
+    im_data = image_data.ImageData(len(y_range), len(x_range), ref_index, comp_index,
+                                   ref_template_size, search_window_size, grid_spacing)
 
     for i in range(len(y_range)):
         for j in range(len(x_range)):
@@ -92,67 +90,145 @@ def plot_disp_and_strain(ref_img, img_data):
     plt.figure()
 
     # Subplot 1: Displacement
-    ax = plt.subplot(2, 1, 1)
-    ax.title.set_text("Displacements between image " + str(img_data.reference_index)
+    # ax = plt.subplot(3, 1, 1)
+    # ax.title.set_text("Displacements between image " + str(img_data.reference_index)
+    #                   + " and image " + str(img_data.comparison_index))
+    #
+    # plt.imshow(ref_img,         # Show reference image
+    #            cmap="gray",     # Grayscale
+    #            vmin=0,          # Minimum pixel value
+    #            vmax=255,        # Maximum pixel value
+    #            origin="lower")  # Flip image so increasing row corresponds to increasing y
+    #
+    # # Displacement magnitude in mm
+    # disp_mag = np.sqrt(img_data.displacement[:, :, 0] ** 2 + img_data.displacement[:, :, 1] ** 2) * PIXELS_TO_MM
+    #
+    # plt.quiver(img_data.location[:, :, 0],      # x coordinates of arrow locations
+    #            img_data.location[:, :, 1],      # y coordinates of arrow locations
+    #            img_data.displacement[:, :, 0],  # x components of arrow vectors
+    #            img_data.displacement[:, :, 1],  # y components of arrow vectors
+    #            disp_mag,                        # arrow color (vector magnitude)
+    #            cmap=plt.cm.jet,                 # color map (jet)
+    #            units="dots",                    # units of arrow dimensions
+    #            angles="xy")                     # arrows point from (x, y) to (x + u, y + v)
+    #
+    # plt.colorbar(ax=ax)
+
+    disp_matrix = np.zeros((ref_img.shape[0], ref_img.shape[1], 2))
+    strain_matrix = np.zeros((ref_img.shape[0], ref_img.shape[1], 2))
+    rows, cols, channels = img_data.location.shape
+
+    for r in range(rows):
+        for c in range(cols):
+            row_start = int(img_data.location[0, 0, 1] + r * img_data.grid_spacing)
+            col_start = int(img_data.location[0, 0, 0] + c * img_data.grid_spacing)
+
+            row_range = [row_start, row_start + img_data.grid_spacing]
+            col_range = [col_start, col_start + img_data.grid_spacing]
+
+            disp_matrix[row_range[0]:row_range[1], col_range[0]:col_range[1], 0].fill(img_data.displacement[r, c, 0])
+            disp_matrix[row_range[0]:row_range[1], col_range[0]:col_range[1], 1].fill(img_data.displacement[r, c, 1])
+            strain_matrix[row_range[0]:row_range[1], col_range[0]:col_range[1], 0].fill(img_data.strain[r, c, 0])
+            strain_matrix[row_range[0]:row_range[1], col_range[0]:col_range[1], 1].fill(img_data.strain[r, c, 1])
+
+    # Subplot 1: Axial Displacement
+    ax = plt.subplot(2, 2, 1)
+
+    ax.title.set_text("Axial Displacement between image " + str(img_data.reference_index)
                       + " and image " + str(img_data.comparison_index))
 
-    plt.imshow(ref_img,         # Show reference image
-               cmap="gray",     # Grayscale
-               vmin=0,          # Minimum pixel value
-               vmax=255,        # Maximum pixel value
-               origin="lower")  # Flip image so increasing row corresponds to increasing y
+    plt.imshow(
+        ref_img,        # Show reference image
+        cmap="gray",    # Grayscale
+        vmin=0,         # Minimum pixel value
+        vmax=255,       # Maximum pixel value
+        origin="lower"  # Flip image so increasing row corresponds to increasing y
+    )
 
-    # Displacement magnitude in mm
-    disp_mag = np.sqrt(img_data.displacement[:, :, 0] ** 2 + img_data.displacement[:, :, 1] ** 2) * PIXELS_TO_MM
-
-    plt.quiver(img_data.location[:, :, 0],      # x coordinates of arrow locations
-               img_data.location[:, :, 1],      # y coordinates of arrow locations
-               img_data.displacement[:, :, 0],  # x components of arrow vectors
-               img_data.displacement[:, :, 1],  # y components of arrow vectors
-               disp_mag,                        # arrow color (vector magnitude)
-               cmap=plt.cm.jet,                 # color map (jet)
-               units="dots",                    # units of arrow dimensions
-               angles="xy")                     # arrows point from (x, y) to (x + u, y + v)
+    mask = np.ma.masked_where(disp_matrix[:, :, 0] == 0, disp_matrix[:, :, 0] * -PIXELS_TO_MM)
+    plt.imshow(mask, cmap="jet", interpolation="none", origin="lower")
 
     plt.colorbar(ax=ax)
 
-    # Subplot 2: Strain
-    ax = plt.subplot(2, 1, 2)
-    ax.title.set_text("Strain between image " + str(img_data.reference_index)
+    # Subplot 2: Transverse Displacement
+    ax = plt.subplot(2, 2, 2)
+
+    ax.title.set_text("Transverse Displacement between image " + str(img_data.reference_index)
                       + " and image " + str(img_data.comparison_index))
 
-    plt.imshow(ref_img,         # Show reference image
-               cmap="gray",     # Grayscale
-               vmin=0,          # Minimum pixel value
-               vmax=255,        # Maximum pixel value
-               origin="lower")  # Flip image so increasing row corresponds to increasing y
+    ax.imshow(
+        ref_img,  # Show reference image
+        cmap="gray",  # Grayscale
+        vmin=0,  # Minimum pixel value
+        vmax=255,  # Maximum pixel value
+        origin="lower"  # Flip image so increasing row corresponds to increasing y
+    )
 
-    strain_mag = np.sqrt(img_data.strain[:, :, 0] ** 2 + img_data.strain[:, :, 1] ** 2)
+    mask = np.ma.masked_where(disp_matrix[:, :, 1] == 0, disp_matrix[:, :, 1] * PIXELS_TO_MM)
+    ax.imshow(mask, cmap="jet", interpolation="none", origin="lower")
 
-    plt.quiver(img_data.location[0, :, 0],
-               img_data.location[:, 0, 1],
-               img_data.strain[:, :, 0],
-               img_data.strain[:, :, 1],
-               strain_mag,
-               cmap=plt.cm.jet,
-               units="dots",
-               angles="xy")
+    plt.colorbar(ax=ax)
+
+    # Subplot 3: Axial Strain
+    ax = plt.subplot(2, 2, 3)
+
+    ax.title.set_text("Axial Strain between image " + str(img_data.reference_index)
+                      + " and image " + str(img_data.comparison_index))
+
+    ax.imshow(
+        ref_img,  # Show reference image
+        cmap="gray",  # Grayscale
+        vmin=0,  # Minimum pixel value
+        vmax=255,  # Maximum pixel value
+        origin="lower"  # Flip image so increasing row corresponds to increasing y
+    )
+
+    mask = np.ma.masked_where(strain_matrix[:, :, 0] == 0, strain_matrix[:, :, 0] * -1)
+    ax.imshow(mask, cmap="jet", interpolation="none", origin="lower")
+
+    plt.colorbar(ax=ax)
+
+    # Subplot 4: Transverse Strain
+    ax = plt.subplot(2, 2, 4)
+
+    ax.title.set_text("Transverse Strain between image " + str(img_data.reference_index)
+                      + " and image " + str(img_data.comparison_index))
+
+    ax.imshow(
+        ref_img,  # Show reference image
+        cmap="gray",  # Grayscale
+        vmin=0,  # Minimum pixel value
+        vmax=255,  # Maximum pixel value
+        origin="lower"  # Flip image so increasing row corresponds to increasing y
+    )
+
+    mask = np.ma.masked_where(strain_matrix[:, :, 1] == 0, strain_matrix[:, :, 1])
+    ax.imshow(mask, cmap="jet", interpolation="none", origin="lower")
 
     plt.colorbar(ax=ax)
 
     plt.show()
 
 
-def compare_matching_quality(images, ref_idx, comp_idx):
+def compare_matching_quality(images, ref_index, comp_index,
+                             ref_template_size, search_window_size, grid_spacing):
     # Compare Quality of Displacement Tracking Methods
     plt.figure()
-    plt.suptitle("Displacements between image " + str(ref_idx) + " and image " + str(comp_idx))
+    plt.suptitle("Displacements between image " + str(ref_index) + " and image " + str(comp_index))
 
     i = 1
     for match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
                          cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
                          cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
-        reference_img, img_data = find_displacement(images, ref_idx, comp_idx, match_method)
+        reference_img, img_data = find_displacement(
+            images=images,
+            ref_index=ref_index,
+            comp_index=comp_index,
+            match_method=match_method,
+            ref_template_size=ref_template_size,
+            search_window_size=search_window_size,
+            grid_spacing=grid_spacing
+        )
 
         ax = plt.subplot(3, 2, i)
 
@@ -247,6 +323,99 @@ def plot_frame_data(frame_data):
     plt.show()
 
 
+def stress_strain_curve(specimen, frame_data, strain):
+    plt.figure()
+
+    x = []
+    y = []
+
+    for i in range(1, len(frame_data)):
+        x.append(frame_data[i].disp / specimen.ol)
+        y.append(frame_data[i].stress)
+
+    ax = plt.subplot(2, 1, 1)
+    ax.title.set_text("Stress-Strain Curve (Overall Length)")
+    plt.plot(x, y)
+    plt.xlabel("Axial Strain")
+    plt.ylabel("Axial Stress (MPa)")
+
+    ax = plt.subplot(2, 1, 2)
+    ax.title.set_text("Stress-Strain Curve (Gauge Length)")
+
+    plt.plot(strain[2:], y[2:659])
+    plt.xlabel("Axial Strain")
+    plt.ylabel("Axial Stress (MPa)")
+
+    plt.show()
+
+
+def strain_measurement(images, match_method, ref_template_size, search_window_size, pt1, pt2):
+    orig_len_x = np.abs(pt2[0] - pt1[0])
+    orig_len_y = np.abs(pt2[1] - pt1[1])
+
+    length_x = np.zeros((659,))
+    length_y = np.zeros((659,))
+
+    for i in range(1, 658):
+        reference = images[i]
+        compare_img = images[i + 1]
+
+        for pt in [pt1, pt2]:
+            x, y = pt
+
+            template_x = [x - (ref_template_size[0] // 2), x + ((ref_template_size[0] + 1) // 2)]
+            template_y = [y - (ref_template_size[1] // 2), y + ((ref_template_size[1] + 1) // 2)]
+            search_x = [template_x[0] - search_window_size[0], template_x[1] + search_window_size[0]]
+            search_y = [template_y[0] - search_window_size[1], template_y[1] + search_window_size[1]]
+
+            ref_template = reference[template_y[0]:template_y[1], template_x[0]:template_x[1]]
+            search_window = compare_img[search_y[0]:search_y[1], search_x[0]:search_x[1]]
+
+            res = cv2.matchTemplate(
+                image=search_window,  # Search window in compare image
+                templ=ref_template,  # Template from reference image
+                method=match_method  # Matching Method
+            )
+
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(src=res)
+
+            dx = None
+            dy = None
+
+            if match_method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+                dx = min_loc[0] - search_window_size[0]
+                dy = min_loc[1] - search_window_size[1]
+            elif match_method in [cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+                                  cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED]:
+                dx = max_loc[0] - search_window_size[0]
+                dy = max_loc[1] - search_window_size[1]
+
+            if pt == pt1:
+                pt1[0] += dx
+                pt1[1] += dy
+            elif pt == pt2:
+                pt2[0] += dx
+                pt2[1] += dy
+
+        length_x[i + 1] = np.abs(pt2[0] - pt1[0])
+        length_y[i + 1] = np.abs(pt2[1] - pt1[1])
+
+    strain_x = (length_x - orig_len_x) / orig_len_x
+    strain_y = (length_y - orig_len_y) / orig_len_y
+
+    return strain_x, strain_y
+
+
+def poisson_ratio(strain_x, strain_y):
+    plt.figure()
+    plt.title("Transverse vs. Axial Strain")
+    plt.xlabel("Axial Strain")
+    plt.ylabel("Transverse Strain")
+    plt.plot(strain_x[2:], strain_y[2:])
+
+    plt.show()
+
+
 if __name__ == '__main__':
     images = read_images()
 
@@ -255,12 +424,39 @@ if __name__ == '__main__':
     # Width = 16.61 mm = 404 pixels
     PIXELS_TO_MM = specimen.w / 404
 
-    plot_frame_data(frame_data)
+    # plot_frame_data(frame_data)
 
-    compare_matching_time()
-
-    compare_matching_quality(images, 8, 9)
-    compare_matching_quality(images, 560, 561)
+    # strain_x, strain_y = strain_measurement(
+    #     images=images,
+    #     match_method=cv2.TM_CCORR_NORMED,
+    #     ref_template_size=(9, 9),
+    #     search_window_size=(5, 3),
+    #     pt1=[725, 200],
+    #     pt2=[1975, 400]
+    # )
+    #
+    # stress_strain_curve(specimen, frame_data, strain_x)
+    #
+    # poisson_ratio(strain_x, strain_y)
+    #
+    # compare_matching_time()
+    #
+    # compare_matching_quality(
+    #     images=images,
+    #     ref_index=8,
+    #     comp_index=9,
+    #     ref_template_size=(5, 5),
+    #     search_window_size=(10, 5),
+    #     grid_spacing=5
+    # )
+    # compare_matching_quality(
+    #     images=images,
+    #     ref_index=560,
+    #     comp_index=561,
+    #     ref_template_size=(5, 5),
+    #     search_window_size=(10, 5),
+    #     grid_spacing=5
+    # )
 
     # Matching Methods
     #   cv2.TM_SQDIFF
@@ -270,6 +466,27 @@ if __name__ == '__main__':
     #   cv2.TM_CCOEFF
     #   cv2.TM_CCOEFF_NORMED
 
-    for i in range(650, 660):
-        reference_img, img_data = find_displacement(images, i, i+1, cv2.TM_CCORR_NORMED)
-        plot_disp_and_strain(reference_img, img_data)
+    # for i in range(8, 680, 25):
+    #     reference_img, img_data = find_displacement(
+    #         images=images,
+    #         ref_index=i,
+    #         comp_index=i+5,
+    #         match_method=cv2.TM_CCORR_NORMED,
+    #         ref_template_size=(5, 5),
+    #         search_window_size=(10, 5),
+    #         grid_spacing=5
+    #     )
+    #
+    #     plot_disp_and_strain(reference_img, img_data)
+
+    reference_img, img_data = find_displacement(
+        images=images,
+        ref_index=657,
+        comp_index=658,
+        match_method=cv2.TM_CCORR_NORMED,
+        ref_template_size=(5, 5),
+        search_window_size=(10, 5),
+        grid_spacing=5
+    )
+
+    plot_disp_and_strain(reference_img, img_data)
