@@ -38,6 +38,7 @@ def read_file(filepath):
     data_start = -1
     in_frame_data = False
 
+    # Read lines of file into specimen variables and frame data
     for line in file:
         if "Width" in line:
             index = line.find("\t")

@@ -4,6 +4,8 @@
 # Authors: Sravan Balaji & Kevin Monpara                    #
 # Filename: image_data.py                                   #
 # Description:                                              #
+# Class definition for ImageData. Holds information about   #
+# displacement and strain between two images                #
 #                                                           #
 #############################################################
 

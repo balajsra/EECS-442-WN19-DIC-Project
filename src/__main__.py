@@ -1,3 +1,14 @@
+#############################################################
+#             EECS 442: Computer Vision - W19               #
+#############################################################
+# Authors: Sravan Balaji & Kevin Monpara                    #
+# Filename: __main__.py                                     #
+# Description:                                              #
+#   Perform DIC and generate various plots for Young's      #
+#   modulus, Poisson's ratio, matching method comparisons,  #
+#   etc.                                                    #
+#############################################################
+
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
@@ -9,6 +20,7 @@ PIXELS_TO_MM = None
 
 
 def read_images():
+    # Read images into numpy arrays
     image_dir = '../Images/'
     filenames = os.listdir(image_dir)
 
@@ -24,6 +36,7 @@ def read_images():
 
 def find_displacement(images, ref_index, comp_index, match_method,
                       ref_template_size, search_window_size, grid_spacing):
+    # Compare subsets from reference image to compare_img to find displacement and strain
     reference = images[ref_index]
     compare_img = images[comp_index]
 
@@ -89,35 +102,11 @@ def find_displacement(images, ref_index, comp_index, match_method,
 def plot_disp_and_strain(ref_img, img_data):
     plt.figure()
 
-    # Subplot 1: Displacement
-    # ax = plt.subplot(3, 1, 1)
-    # ax.title.set_text("Displacements between image " + str(img_data.reference_index)
-    #                   + " and image " + str(img_data.comparison_index))
-    #
-    # plt.imshow(ref_img,         # Show reference image
-    #            cmap="gray",     # Grayscale
-    #            vmin=0,          # Minimum pixel value
-    #            vmax=255,        # Maximum pixel value
-    #            origin="lower")  # Flip image so increasing row corresponds to increasing y
-    #
-    # # Displacement magnitude in mm
-    # disp_mag = np.sqrt(img_data.displacement[:, :, 0] ** 2 + img_data.displacement[:, :, 1] ** 2) * PIXELS_TO_MM
-    #
-    # plt.quiver(img_data.location[:, :, 0],      # x coordinates of arrow locations
-    #            img_data.location[:, :, 1],      # y coordinates of arrow locations
-    #            img_data.displacement[:, :, 0],  # x components of arrow vectors
-    #            img_data.displacement[:, :, 1],  # y components of arrow vectors
-    #            disp_mag,                        # arrow color (vector magnitude)
-    #            cmap=plt.cm.jet,                 # color map (jet)
-    #            units="dots",                    # units of arrow dimensions
-    #            angles="xy")                     # arrows point from (x, y) to (x + u, y + v)
-    #
-    # plt.colorbar(ax=ax)
-
     disp_matrix = np.zeros((ref_img.shape[0], ref_img.shape[1], 2))
     strain_matrix = np.zeros((ref_img.shape[0], ref_img.shape[1], 2))
     rows, cols, channels = img_data.location.shape
 
+    # Expand displacement and strain values into larger pixel windows for visualization
     for r in range(rows):
         for c in range(cols):
             row_start = int(img_data.location[0, 0, 1] + r * img_data.grid_spacing)
@@ -157,10 +146,10 @@ def plot_disp_and_strain(ref_img, img_data):
                       + " and image " + str(img_data.comparison_index))
 
     ax.imshow(
-        ref_img,  # Show reference image
-        cmap="gray",  # Grayscale
-        vmin=0,  # Minimum pixel value
-        vmax=255,  # Maximum pixel value
+        ref_img,        # Show reference image
+        cmap="gray",    # Grayscale
+        vmin=0,         # Minimum pixel value
+        vmax=255,       # Maximum pixel value
         origin="lower"  # Flip image so increasing row corresponds to increasing y
     )
 
@@ -176,10 +165,10 @@ def plot_disp_and_strain(ref_img, img_data):
                       + " and image " + str(img_data.comparison_index))
 
     ax.imshow(
-        ref_img,  # Show reference image
-        cmap="gray",  # Grayscale
-        vmin=0,  # Minimum pixel value
-        vmax=255,  # Maximum pixel value
+        ref_img,        # Show reference image
+        cmap="gray",    # Grayscale
+        vmin=0,         # Minimum pixel value
+        vmax=255,       # Maximum pixel value
         origin="lower"  # Flip image so increasing row corresponds to increasing y
     )
 
@@ -195,10 +184,10 @@ def plot_disp_and_strain(ref_img, img_data):
                       + " and image " + str(img_data.comparison_index))
 
     ax.imshow(
-        ref_img,  # Show reference image
-        cmap="gray",  # Grayscale
-        vmin=0,  # Minimum pixel value
-        vmax=255,  # Maximum pixel value
+        ref_img,        # Show reference image
+        cmap="gray",    # Grayscale
+        vmin=0,         # Minimum pixel value
+        vmax=255,       # Maximum pixel value
         origin="lower"  # Flip image so increasing row corresponds to increasing y
     )
 
@@ -270,6 +259,7 @@ def compare_matching_time():
 
     methods = ["SQDIFF", "SQDIFF_NORMED", "CCORR", "CCORR_NORMED", "CCOEFF", "CCOEFF_NORMED"]
 
+    # Runtime in seconds from 3 trials
     SQDIFF = [6.969048976898193, 6.824753761291504, 6.946980714797974]
     SQDIFF_NORMED = [7.051121950149536, 7.040151357650757, 6.851653814315796]
     CCORR = [7.0052430629730225, 6.867607116699219, 6.804780006408691]
@@ -292,6 +282,7 @@ def compare_matching_time():
 
 
 def plot_frame_data(frame_data):
+    # Use data from LabVIEW file to plot displacement, load, and stress curves
     plt.figure()
 
     x = []
@@ -324,6 +315,7 @@ def plot_frame_data(frame_data):
 
 
 def stress_strain_curve(specimen, frame_data, strain):
+    # Plot stress strain curve using LabVIEW file and DIC to compare results
     plt.figure()
 
     x = []
@@ -350,6 +342,7 @@ def stress_strain_curve(specimen, frame_data, strain):
 
 
 def strain_measurement(images, match_method, ref_template_size, search_window_size, pt1, pt2):
+    # Pick 2 points on image, track their displacements, compute the strain of the line connecting them
     orig_len_x = np.abs(pt2[0] - pt1[0])
     orig_len_y = np.abs(pt2[1] - pt1[1])
 
@@ -407,6 +400,7 @@ def strain_measurement(images, match_method, ref_template_size, search_window_si
 
 
 def poisson_ratio(strain_x, strain_y):
+    # Plot Transverse vs. Axial strain
     plt.figure()
     plt.title("Transverse vs. Axial Strain")
     plt.xlabel("Axial Strain")
@@ -417,48 +411,56 @@ def poisson_ratio(strain_x, strain_y):
 
 
 if __name__ == '__main__':
+    # Read in images from Images folder
     images = read_images()
 
+    # Read in numerical data from LabVIEW output file
     specimen, frame_data = file_data.read_file("../Section001_Data.txt")
 
     # Width = 16.61 mm = 404 pixels
     PIXELS_TO_MM = specimen.w / 404
 
-    # plot_frame_data(frame_data)
+    # Plot data from LabVIEW file
+    plot_frame_data(frame_data)
 
-    # strain_x, strain_y = strain_measurement(
-    #     images=images,
-    #     match_method=cv2.TM_CCORR_NORMED,
-    #     ref_template_size=(9, 9),
-    #     search_window_size=(5, 3),
-    #     pt1=[725, 200],
-    #     pt2=[1975, 400]
-    # )
-    #
-    # stress_strain_curve(specimen, frame_data, strain_x)
-    #
-    # poisson_ratio(strain_x, strain_y)
-    #
-    # compare_matching_time()
-    #
-    # compare_matching_quality(
-    #     images=images,
-    #     ref_index=8,
-    #     comp_index=9,
-    #     ref_template_size=(5, 5),
-    #     search_window_size=(10, 5),
-    #     grid_spacing=5
-    # )
-    # compare_matching_quality(
-    #     images=images,
-    #     ref_index=560,
-    #     comp_index=561,
-    #     ref_template_size=(5, 5),
-    #     search_window_size=(10, 5),
-    #     grid_spacing=5
-    # )
+    # Get axial and transverse strain measurements using 2 points
+    strain_x, strain_y = strain_measurement(
+        images=images,
+        match_method=cv2.TM_CCORR_NORMED,
+        ref_template_size=(9, 9),
+        search_window_size=(5, 3),
+        pt1=[725, 200],
+        pt2=[1975, 400]
+    )
 
-    # Matching Methods
+    # Plot Stress-Strain curve from LabVIEW data as well as
+    stress_strain_curve(specimen, frame_data, strain_x)
+
+    # Plot Transverse vs Axial strain to get Poisson's Ratio
+    poisson_ratio(strain_x, strain_y)
+
+    # Plot runtime of different matching methods
+    compare_matching_time()
+
+    # Plot displacement using different matching methods
+    compare_matching_quality(
+        images=images,
+        ref_index=8,
+        comp_index=9,
+        ref_template_size=(5, 5),
+        search_window_size=(10, 5),
+        grid_spacing=5
+    )
+    compare_matching_quality(
+        images=images,
+        ref_index=560,
+        comp_index=561,
+        ref_template_size=(5, 5),
+        search_window_size=(10, 5),
+        grid_spacing=5
+    )
+
+    # Matching Methods available in OpenCV
     #   cv2.TM_SQDIFF
     #   cv2.TM_SQDIFF_NORMED
     #   cv2.TM_CCORR
@@ -466,19 +468,21 @@ if __name__ == '__main__':
     #   cv2.TM_CCOEFF
     #   cv2.TM_CCOEFF_NORMED
 
-    # for i in range(8, 680, 25):
-    #     reference_img, img_data = find_displacement(
-    #         images=images,
-    #         ref_index=i,
-    #         comp_index=i+5,
-    #         match_method=cv2.TM_CCORR_NORMED,
-    #         ref_template_size=(5, 5),
-    #         search_window_size=(10, 5),
-    #         grid_spacing=5
-    #     )
-    #
-    #     plot_disp_and_strain(reference_img, img_data)
+    # Generate displacement and strain plots at regular intervals in tensile test
+    for i in range(8, 680, 25):
+        reference_img, img_data = find_displacement(
+            images=images,
+            ref_index=i,
+            comp_index=i+5,
+            match_method=cv2.TM_CCORR_NORMED,
+            ref_template_size=(5, 5),
+            search_window_size=(10, 5),
+            grid_spacing=5
+        )
 
+        plot_disp_and_strain(reference_img, img_data)
+
+    # Generate displacement and strain plot for image right before fracture
     reference_img, img_data = find_displacement(
         images=images,
         ref_index=657,
