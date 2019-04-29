@@ -21,3 +21,16 @@ The data file contains a column with the frame number to sync the data and image
 
 ## Motivation
 The motivation for this project came from Sravan's [MECHENG 395: Laboratory I](https://me.engin.umich.edu/academics/courses) course at the University of Michigan in which a tensile test of brass was conducted and analyzed using [LaVision](https://www.lavision.de/en/) DaVis software. After a conversation with [Dr. Michael Thouless](https://me.engin.umich.edu/people/faculty/michael-thouless), who had worked on a paper using DIC to investigate the cohesive zone in a double-cantilever beam, we determined that this would be a cool project to combine our interest in Mechanical Engineering and Computer Science.
+
+## Dependencies
+
+### Recommended
+* [Anaconda 5.2 for Python 3.7.x](https://www.anaconda.com/download/)
+
+### Required
+* [Numpy](https://www.numpy.org)
+    * conda install -c anaconda numpy
+* [Matplotlib](https://matplotlib.org)
+    * conda install -c conda-forge matplotlib
+* [OpenCV](https://opencv.org)
+    * conda install -c menpo opencv
