@@ -1,6 +1,8 @@
 # EECS 442 DIC Project
 
 ## Useful Links
+* [GitHub Repository Link](https://github.com/balajsra/eecs-442-dic-project/)
+
 * [GitLab Repository Link](https://gitlab.eecs.umich.edu/balajsra/eecs-442-dic-project/)
 
 * [Overleaf Report Link](https://www.overleaf.com/read/whvdsndzrvqw)
